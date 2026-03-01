@@ -2,9 +2,12 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>AR Video Correct Ratio</title>
+  <title>Mobile AR Video</title>
 
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+
+  <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
@@ -45,6 +48,7 @@
   device-orientation-permission-ui="enabled: false">
 
   <a-assets>
+    <!-- IMPORTANT FOR MOBILE -->
     <video
       id="video"
       src="./video.mp4"
@@ -58,15 +62,12 @@
   <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
   <a-entity id="target" mindar-image-target="targetIndex: 0">
-
-    <!-- 16:9 VIDEO RATIO -->
     <a-video
       src="#video"
-      width="1"
-      height="0.5625"
+      width="2.5"
+      height="1.406"
       position="0 0 0">
     </a-video>
-
   </a-entity>
 
 </a-scene>
@@ -77,19 +78,23 @@
   const target = document.querySelector("#target");
   const btn = document.querySelector("#start-btn");
 
+  // REQUIRED for mobile – unlock video on first tap
   btn.addEventListener("click", async () => {
     await video.play();
     video.pause();
     video.currentTime = 0;
 
     await scene.systems["mindar-image-system"].start();
+
     btn.style.display = "none";
   });
 
+  // Play only when image detected
   target.addEventListener("targetFound", () => {
     video.play();
   });
 
+  // Pause when image lost
   target.addEventListener("targetLost", () => {
     video.pause();
   });
