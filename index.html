@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimal-ui">
-  <title>AR Video with Audio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>AR Photo Video Overlay</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
@@ -22,7 +22,7 @@
 
     a-scene {
       position: fixed !important;
-      top: 0; 
+      top: 0;
       left: 0;
       width: 100vw !important;
       height: 100vh !important;
@@ -38,74 +38,82 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      padding: 20px 40px;
+      padding: 18px 35px;
       font-size: 18px;
-      z-index: 10;
-      cursor: pointer;
+      z-index: 999;
+      border: none;
+      border-radius: 10px;
       background: rgba(0,0,0,0.7);
       color: white;
-      border: none;
-      border-radius: 8px;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- AR Scene -->
-  <a-scene
-    mindar-image="imageTargetSrc: ./targets.mind;"
-    embedded
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
+<button id="start-btn">Tap to Start AR</button>
 
-    <!-- Assets -->
-    <a-assets>
-      <!-- IMPORTANT: make sure video.mp4 is in same folder -->
-      <video 
-        id="video" 
-        src="./video.mp4" 
-        loop 
-        playsinline
-        webkit-playsinline
-        crossorigin="anonymous">
-      </video>
-    </a-assets>
+<a-scene
+  mindar-image="imageTargetSrc: ./targets.mind;"
+  embedded
+  color-space="sRGB"
+  vr-mode-ui="enabled: false"
+  device-orientation-permission-ui="enabled: false">
 
-    <!-- Camera -->
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+  <a-assets>
+    <video
+      id="video"
+      src="./video.mp4"
+      preload="auto"
+      loop
+      playsinline
+      webkit-playsinline
+      crossorigin="anonymous">
+    </video>
+  </a-assets>
 
-    <!-- Image Target -->
-    <a-entity mindar-image-target="targetIndex: 0">
+  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- BIGGER VIDEO (16:9 ratio) -->
-      <a-video
-        src="#video"
-        width="2.5"
-        height="1.406"
-        position="0 0 0">
-      </a-video>
+  <a-entity id="target" mindar-image-target="targetIndex: 0">
 
-    </a-entity>
+    <!-- MATCHED TO IMAGE RATIO (1080 x 1347) -->
+    <!-- aspect ratio ≈ 0.80 -->
+    <!-- height = width × 1.247 -->
 
-  </a-scene>
+    <a-video
+      src="#video"
+      width="1"
+      height="1.247"
+      position="0 0 0">
+    </a-video>
 
-  <!-- Start Button -->
-  <button id="start-btn">Start AR</button>
+  </a-entity>
 
-  <script>
-    const video = document.querySelector("#video");
-    const startBtn = document.querySelector("#start-btn");
+</a-scene>
 
-    startBtn.addEventListener("click", async () => {
-      try {
-        await video.play();
-        startBtn.style.display = "none";
-      } catch (err) {
-        console.log("Playback error:", err);
-      }
-    });
-  </script>
+<script>
+  const scene = document.querySelector("a-scene");
+  const video = document.querySelector("#video");
+  const target = document.querySelector("#target");
+  const btn = document.querySelector("#start-btn");
+
+  btn.addEventListener("click", async () => {
+    await video.play();
+    video.pause();
+    video.currentTime = 0;
+
+    await scene.systems["mindar-image-system"].start();
+    btn.style.display = "none";
+  });
+
+  target.addEventListener("targetFound", () => {
+    video.play();
+  });
+
+  target.addEventListener("targetLost", () => {
+    video.pause();
+  });
+</script>
 
 </body>
 </html>
