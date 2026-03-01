@@ -54,7 +54,9 @@
 <button id="start-btn">Tap to Start AR</button>
 
 <a-scene
-  mindar-image="imageTargetSrc: ./targets.mind;"
+  mindar-image="imageTargetSrc: ./targets.mind; 
+                filterMinCF: 0.00001; 
+                filterBeta: 0.005;"
   embedded
   color-space="sRGB"
   vr-mode-ui="enabled: false"
@@ -67,7 +69,8 @@
       preload="auto"
       playsinline
       webkit-playsinline
-      crossorigin="anonymous">
+      crossorigin="anonymous"
+      muted>
     </video>
   </a-assets>
 
@@ -75,15 +78,18 @@
 
   <a-entity id="target" mindar-image-target="targetIndex: 0">
 
-    <!-- MATCHED TO IMAGE RATIO (1080 x 1347) -->
+    <!-- Your image ratio 1080 x 1347 -->
     <!-- aspect ratio ≈ 0.80 -->
     <!-- height = width × 1.247 -->
 
     <a-video
+      id="videoPlane"
       src="#video"
       width="1"
       height="1.247"
-      position="0 0 0">
+      position="0 0 0.01"
+      material="shader: flat;"
+      visible="false">
     </a-video>
 
   </a-entity>
@@ -95,22 +101,29 @@
   const video = document.querySelector("#video");
   const target = document.querySelector("#target");
   const btn = document.querySelector("#start-btn");
+  const videoPlane = document.querySelector("#videoPlane");
 
-  // Start AR only (no video play here)
   btn.addEventListener("click", async () => {
+
+    // Unlock video for mobile
+    await video.play();
+    video.pause();
+    video.currentTime = 0;
+
     await scene.systems["mindar-image-system"].start();
     btn.style.display = "none";
   });
 
-  // Play video only when image is found
   target.addEventListener("targetFound", () => {
+    videoPlane.setAttribute("visible", true);
+    video.muted = false;
     video.play();
   });
 
-  // Stop video when image is lost
   target.addEventListener("targetLost", () => {
     video.pause();
     video.currentTime = 0;
+    videoPlane.setAttribute("visible", false);
   });
 </script>
 
