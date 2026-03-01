@@ -65,7 +65,6 @@
       id="video"
       src="./video.mp4"
       preload="auto"
-      loop
       playsinline
       webkit-playsinline
       crossorigin="anonymous">
@@ -97,21 +96,21 @@
   const target = document.querySelector("#target");
   const btn = document.querySelector("#start-btn");
 
+  // Start AR only (no video play here)
   btn.addEventListener("click", async () => {
-    await video.play();
-    video.pause();
-    video.currentTime = 0;
-
     await scene.systems["mindar-image-system"].start();
     btn.style.display = "none";
   });
 
+  // Play video only when image is found
   target.addEventListener("targetFound", () => {
     video.play();
   });
 
+  // Stop video when image is lost
   target.addEventListener("targetLost", () => {
     video.pause();
+    video.currentTime = 0;
   });
 </script>
 
