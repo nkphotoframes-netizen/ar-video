@@ -1,38 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>MindAR — Portrait target, landscape video (center-crop)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>AR Portrait Video</title>
 
-  <!-- A-Frame -->
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
-  <!-- MindAR -->
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      width: 100%;
-      height: 100%;
-      background: black;
-    }
-    #start-btn {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%,-50%);
-      padding: 14px 28px;
-      font-size: 18px;
-      z-index: 999;
-      border: none;
-      border-radius: 10px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-    }
-  </style>
+<style>
+html, body {
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  width:100%;
+  height:100%;
+  background:black;
+}
+#start-btn {
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  padding:15px 30px;
+  font-size:18px;
+  z-index:999;
+  border:none;
+  border-radius:8px;
+  background:rgba(0,0,0,0.7);
+  color:white;
+}
+</style>
 </head>
 
 <body>
@@ -40,106 +37,66 @@
 <button id="start-btn">Tap to Start AR</button>
 
 <a-scene
-  mindar-image="imageTargetSrc: ./targets.mind;"
-  embedded
-  color-space="sRGB"
-  vr-mode-ui="enabled: false"
-  device-orientation-permission-ui="enabled: false">
+mindar-image="imageTargetSrc: ./targets.mind;"
+embedded
+color-space="sRGB"
+vr-mode-ui="enabled: false"
+device-orientation-permission-ui="enabled: false">
 
-  <a-assets>
-    <!-- Put video.mp4 in same folder as this file or use a hosted URL -->
-    <video id="video" src="./video.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
-  </a-assets>
+<a-assets>
+<video
+  id="video"
+  src="./video.mp4"
+  preload="auto"
+  playsinline
+  webkit-playsinline
+  crossorigin="anonymous">
+</video>
+</a-assets>
 
-  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+<a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 
-  <!-- portrait target: MindAR scales target width to 1 internally,
-       so we set plane width = 1 and height = imageH/imageW = 1341/1080 = 1.241 -->
-  <a-entity id="target" mindar-image-target="targetIndex: 0">
-    <!-- we use a plane with a material that maps the video texture -->
-    <a-plane id="videoPlane"
-             width="1"
-             height="1.241"
-             position="0 0 0"
-             rotation="0 0 0"
-             material="shader: flat; src: #video; side: double;">
-    </a-plane>
-  </a-entity>
+<a-entity id="target" mindar-image-target="targetIndex: 0">
+
+  <!-- Increased height but correct ratio -->
+  <a-video
+    id="arvideo"
+    src="#video"
+    width="1.2"
+    height="1.489"
+    position="0 0 0">
+  </a-video>
+
+</a-entity>
 
 </a-scene>
 
 <script>
-  const scene = document.querySelector('a-scene');
-  const video = document.querySelector('#video');
-  const plane = document.querySelector('#videoPlane');
-  const target = document.querySelector('#target');
-  const btn = document.querySelector('#start-btn');
+const scene = document.querySelector("a-scene");
+const video = document.querySelector("#video");
+const target = document.querySelector("#target");
+const btn = document.querySelector("#start-btn");
 
-  // target aspect (portrait image 1080x1341)
-  const targetAspect = 1080 / 1341; // ≈ 0.805
+btn.addEventListener("click", async () => {
 
-  // Unlock mobile autoplay on first tap and start MindAR camera
-  btn.addEventListener('click', async () => {
-    try {
-      // Play then pause to unlock mobile audio/video autoplay policies
-      await video.play();
-      video.pause();
-      video.currentTime = 0;
-    } catch (err) {
-      // ignore playback errors here; we still try to start camera
-      console.warn('video unlock attempt failed', err);
-    }
+  // unlock audio for mobile
+  video.muted = true;
+  await video.play();
+  video.pause();
+  video.currentTime = 0;
+  video.muted = false;
 
-    // wait for mindar system and start camera
-    await scene.systems['mindar-image-system'].start();
-    btn.style.display = 'none';
-  });
+  await scene.systems["mindar-image-system"].start();
+  btn.style.display = "none";
+});
 
-  // Once video metadata is loaded, compute aspect and set UV crop
-  video.addEventListener('loadedmetadata', () => {
-    const videoAspect = video.videoWidth / video.videoHeight;
+target.addEventListener("targetFound", () => {
+  video.play();
+});
 
-    // If video is wider than target (common landscape on portrait target),
-    // we need to show a centered vertical slice of the video.
-    if (videoAspect > targetAspect) {
-      // proportion of video width that should be visible to match target aspect
-      const visibleProportionX = targetAspect / videoAspect; // < 1
-      const offsetX = (1 - visibleProportionX) / 2;
-
-      // set material repeat & offset to crop horizontally and center
-      plane.setAttribute('material', 'repeat', `${visibleProportionX} 1`);
-      plane.setAttribute('material', 'offset', `${offsetX} 0`);
-    } else {
-      // video is taller (rare) — crop vertically and center
-      const visibleProportionY = videoAspect / targetAspect; // < 1
-      const offsetY = (1 - visibleProportionY) / 2;
-      plane.setAttribute('material', 'repeat', `1 ${visibleProportionY}`);
-      plane.setAttribute('material', 'offset', `0 ${offsetY}`);
-    }
-
-    // ensure the video texture updates on the material
-    // (A-Frame updates automatically, but this ensures material refresh)
-    const mat = plane.getObject3D('mesh').material;
-    if (mat && mat.map) mat.map.needsUpdate = true;
-  });
-
-  // Play/pause video when target found/lost
-  target.addEventListener('targetFound', () => {
-    // restart or continue — choose behavior
-    // video.currentTime = 0; // uncomment to always restart from start
-    video.play().catch(err => console.warn('play failed', err));
-  });
-
-  target.addEventListener('targetLost', () => {
-    video.pause();
-  });
-
-  // Extra: if user navigates away, stop mindar to free camera
-  window.addEventListener('beforeunload', async () => {
-    try {
-      await scene.systems['mindar-image-system'].stop();
-    } catch (e) {}
-  });
+target.addEventListener("targetLost", () => {
+  video.pause();
+});
 </script>
 
 </body>
