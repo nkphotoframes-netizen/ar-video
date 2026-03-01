@@ -2,12 +2,9 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Mobile AR Portrait Video</title>
+  <title>AR Portrait Video</title>
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-
-  <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
@@ -63,11 +60,11 @@
   <!-- IMAGE TARGET -->
   <a-entity id="target" mindar-image-target="targetIndex: 0">
 
-    <!-- PERFECT MATCH TO 1080x1341 IMAGE -->
+    <!-- EXACT MATCH TO 1080x1341 -->
     <a-video
       src="#video"
-      width="2.5"
-      height="3.1"
+      width="1"
+      height="1.241"
       position="0 0 0">
     </a-video>
 
@@ -81,7 +78,6 @@
   const target = document.querySelector("#target");
   const btn = document.querySelector("#start-btn");
 
-  // Unlock video for mobile autoplay
   btn.addEventListener("click", async () => {
     await video.play();
     video.pause();
@@ -91,12 +87,10 @@
     btn.style.display = "none";
   });
 
-  // Play only when image detected
   target.addEventListener("targetFound", () => {
     video.play();
   });
 
-  // Pause when image lost
   target.addEventListener("targetLost", () => {
     video.pause();
   });
