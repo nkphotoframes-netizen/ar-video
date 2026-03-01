@@ -4,10 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimal-ui">
   <title>AR Video with Audio</title>
 
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-
-  <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
@@ -18,19 +15,6 @@
       height: 100%;
       overflow: hidden;
       background: black;
-    }
-
-    a-scene {
-      position: fixed !important;
-      top: 0; 
-      left: 0;
-      width: 100vw !important;
-      height: 100vh !important;
-    }
-
-    canvas {
-      width: 100% !important;
-      height: 100% !important;
     }
 
     #start-btn {
@@ -52,59 +36,60 @@
 
 <body>
 
-  <!-- AR Scene -->
+  <button id="start-btn">Start AR</button>
+
   <a-scene
     mindar-image="imageTargetSrc: ./targets.mind;"
+    color-space="sRGB"
     embedded
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
 
-    <!-- Assets -->
     <a-assets>
-      <!-- IMPORTANT: make sure video.mp4 is in same folder -->
       <video 
         id="video" 
-        src="./video.mp4" 
-        loop 
+        src="./video.mp4"
         playsinline
         webkit-playsinline
         crossorigin="anonymous">
       </video>
     </a-assets>
 
-    <!-- Camera -->
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- Image Target -->
-    <a-entity mindar-image-target="targetIndex: 0">
-
-      <!-- BIGGER VIDEO (16:9 ratio) -->
+    <a-entity id="target" mindar-image-target="targetIndex: 0">
       <a-video
         src="#video"
         width="2.5"
         height="1.406"
         position="0 0 0">
       </a-video>
-
     </a-entity>
 
   </a-scene>
 
-  <!-- Start Button -->
-  <button id="start-btn">Start AR</button>
-
   <script>
-    const video = document.querySelector("#video");
-    const startBtn = document.querySelector("#start-btn");
+    const scene = document.querySelector('a-scene');
+    const video = document.querySelector('#video');
+    const startBtn = document.querySelector('#start-btn');
+    const target = document.querySelector('#target');
 
+    // Start AR camera only
     startBtn.addEventListener("click", async () => {
-      try {
-        await video.play();
-        startBtn.style.display = "none";
-      } catch (err) {
-        console.log("Playback error:", err);
-      }
+      await scene.systems["mindar-image-system"].start();
+      startBtn.style.display = "none";
     });
+
+    // Play video ONLY when image is found
+    target.addEventListener("targetFound", () => {
+      video.play();
+    });
+
+    // Pause video when image is lost
+    target.addEventListener("targetLost", () => {
+      video.pause();
+    });
+
   </script>
 
 </body>
